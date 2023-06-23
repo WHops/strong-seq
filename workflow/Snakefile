@@ -1,0 +1,135 @@
+configfile: "Snake.config.yaml"
+
+samtools_bin = "/g/korbel/hoeps/anaconda_2022/miniconda3/envs/ashleys/bin/samtools"
+whatshap_bin = "/g/korbel/hoeps/anaconda_2022/miniconda3/envs/whatshap-env/bin/whatshap"
+
+rule all: 
+    input:
+        'res/strong_reads.bam',
+        'res/strong_reads.bam.bai'
+
+
+rule split_sseq_h1_h2:
+    input:
+        sseq_cell=config['sseq_cell'], 
+        snp_file =config['snp_file']
+    output:
+        sseq_h1 = "sseq_split/sseq_h1.bam",
+        sseq_h2 = "sseq_split/sseq_h2.bam",
+        haplotag_list = 'sseq_split/haplotags.tsv'
+    params:
+        ref_fa = config['ref_fa'] # To add
+    shell:
+        """
+        {whatshap_bin} haplotag \
+                        -o tmp.bam \
+                       --reference {params.ref_fa} \
+                       {input.snp_file} \
+                       {input.sseq_cell} \
+                       --ignore-read-groups \
+                       --output-haplotag-list {output.haplotag_list}
+
+        {whatshap_bin} split \
+                        --output-h1 {output.sseq_h1} \
+                        --output-h2 {output.sseq_h2} \
+                        {input.sseq_cell} \
+                        {output.haplotag_list}
+        """
+
+rule split_sseq_hx_plus_minus:
+    input:
+        in_bam = "sseq_split/sseq_{hap}.bam"
+    output:
+        out_bam = "sseq_split/sseq_{hap}_{direction}.bam"
+    shell:
+        """
+        bash scripts/split_bam_by_direction_of_first_read.sh {input.in_bam} {output.out_bam} {wildcards.direction}
+        """
+
+
+rule split_longreads_h1_h2:
+    input:
+        lr_bam = config['longread_bam'],
+        snp_file = config['snp_file'] 
+
+    output:
+        lr_h1 = 'lr_split/lr_h1.bam',
+        lr_h2 = 'lr_split/lr_h2.bam',
+        haplotag_list = 'lr_split/haplotags.tsv'
+    params:
+        ref_fa = config['ref_fa'] 
+    shell: 
+        """
+        {whatshap_bin} haplotag \
+                        -o tmp.bam \
+                       --reference {params.ref_fa} \
+                       {input.snp_file} \
+                       {input.lr_bam} \
+                       --ignore-read-groups \
+                       --output-haplotag-list {output.haplotag_list}
+
+        {whatshap_bin} split \
+                        --output-h1 {output.lr_h1} \
+                        --output-h2 {output.lr_h2} \
+                        {input.lr_bam} \
+                        {output.haplotag_list}
+        """
+
+rule make_eight_plusify_minusify:
+    input:
+        sseq_bam = "sseq_split/sseq_{hap}_{direction}.bam",
+        lr_bam =   "lr_split/lr_{hap}.bam"
+    output:
+        tmp_file = 'lr_sseq_eightfiles/TEMP_lr_h{hap}_{direction}.tsv',
+        plusify = 'lr_sseq_eightfiles/lr_h{hap}_{direction}_plusify.bam',
+        minusify = 'lr_sseq_eightfiles/lr_h{hap}_{direction}_minusify.bam'
+    shell:
+        """
+        bash scripts/overlap_ont_sseq.sh {input.lr_bam} {input.sseq_bam} {output.tmp_file}
+
+        bash scripts/filter_bam_with_list_directionspecific.sh {input.lr_bam} {output.plusify} {output.tmp_file} true
+        bash scripts/filter_bam_with_list_directionspecific.sh {input.lr_bam} {output.minusify} {output.tmp_file} false
+        """ 
+
+rule flip_a_plusify:
+    input: 
+        'lr_sseq_eightfiles/lr_h{hap}_{direction}_{operation}.bam'
+    output:
+        'lr_sseq_eightfiles_reorient/lr_h{hap}_{direction}_{operation}_executed.bam'
+    shell:
+        """
+        bash scripts/modify_bam_orientation.sh {input} {output} {wildcards.operation}
+        """
+
+rule merge_eight_into_one:
+    input:
+        expand('lr_sseq_eightfiles_reorient/lr_h{hap}_{direction}_{operation}_executed.bam', hap = ["h1", "h2"], direction = ["plus", "minus"], operation = ["plusify", "minusify"])
+    output:
+        'res/strong_reads.bam'
+    shell:
+        """
+        {samtools_bin} merge {output} {input}
+        """
+
+
+rule index_bam:
+    input: 
+        '{whatever}.bam'
+    output:
+        '{whatever}.bam.bai'
+    shell:
+        """
+        {samtools_bin} index {input}
+        """
+
+# rule index_vcf:
+#     input:
+#         '{}.vcf'
+#     output:
+#         vcf_gz = '{}.vcf.gz',
+#         index = '{}.vcf.gz.tbi'
+#     shell:
+#         """
+#         bgzip -c {input} > {output.vcf_gz}
+#         tabix -p vcf {output.vcf_gz}
+#         """
