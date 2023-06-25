@@ -1,7 +1,7 @@
 {
-  'sseq_cell' : '/g/korbel/hoeps/projects/strong-seq/data/strandseq/test/sseq_chr22.bam',
-  'longread_bam' : '/g/korbel/hoeps/projects/strong-seq/data/ont_data/ont_chr22.bam',
-  'snp_file' : '/scratch/hoeps/dltest/NA12878_chr22.vcf.gz',
+  'sseq_cell' : 'NW130711.291.L008.srt.mdup',
+  'longread_bam' : '/g/korbel/hoeps/projects/strong-seq/data/ont_data/ont_chr16.bam',
+  'snp_file_dir' : '/scratch/hoeps/dltest',
 
   'ref_fa' : '/g/korbel/hoeps/projects/huminvs/data/hg38/ref_chr_1_22XY.fa'
 }

@@ -1,39 +1,31 @@
 #!/bin/bash
 
 # Check if the correct number of arguments is provided
-if [ "$#" -ne 3 ]; then
-    echo "Usage: bash script_name.sh <lr_bam> <sseq_bam> <output_file>"
+if [ "$#" -ne 4 ]; then
+    echo "Usage: bash script_name.sh <h1_ont.bam> <h1_sseq_plus_output.bam> <output_file> <bedtools_path>"
     exit 1
 fi
 
-
 # input parameters
-
-lr_bam=$1
-sseq_bam=$2
+h1_ont_bam=$1
+h1_sseq_plus_output_bam=$2
 output_file=$3
-
+bedtools_path=$4
 
 # Determine temporary file names based on output file name
-readnames="${output_file}_readnames.txt"
-header="${output_file}_header.sam"
+raw_bed="${output_file}_raw.bed"
+raw_uniq_bed="${output_file}_raw_uniq.bed"
 
-# extract read names from original bam file
-samtools view $lr_bam | awk '{print $1}' | sort | uniq > $readnames
+# Perform intersection of the two BAM files
+${bedtools_path} intersect -a $h1_ont_bam -b $h1_sseq_plus_output_bam -wa -bed | cut -f 4,6 > $raw_bed
 
-# extract read names from second bam file
-samtools view $sseq_bam | awk '{print $1}' | sort | uniq > $header
+# Filter for unique lines
+cat $raw_bed | uniq > $raw_uniq_bed
 
-# extract common read names
-comm -12 $readnames $header > ${output_file}_common_readnames.txt
-
-# Extract the BAM header
-samtools view -H $lr_bam > ${output_file}_header.sam
-
-# Extract the common read alignments and append to the header
-grep -Fwf ${output_file}_common_readnames.txt $lr_bam | cat ${output_file}_header.sam - | samtools view -bS - > $output_file
+# Filter for unique read names
+awk '{print $1}' $raw_uniq_bed | sort | uniq -u | grep -wFf - $raw_uniq_bed > $output_file
 
 # Remove temporary files
-rm $readnames $header ${output_file}_common_readnames.txt ${output_file}_header.sam
+rm $raw_bed $raw_uniq_bed
 
 echo "Operation completed successfully."
