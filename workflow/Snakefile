@@ -64,7 +64,7 @@ rule turn_ont_bam_into_one_chr:
         mapq_th = '60'
     shell:
         """
-        {samtools_bin} view -b -q {params.mapq_th} -F 2048 {input.bam} {wildcards.chr} > {output.bam_onechr}
+        {samtools_bin} view -b -q {params.mapq_th} -F 4 {input.bam} {wildcards.chr} > {output.bam_onechr}
         """
 
 rule obtain_het_snp_vcf:
