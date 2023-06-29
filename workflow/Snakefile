@@ -19,16 +19,11 @@ ont_dir = '/g/korbel/hoeps/projects/strong-seq/data/ont_data'
 # List of chromosomes
 
 CHROMS = ['chr' + str(i) for i in range(1, 23)]
-SSEQ_CELL = ['NW130711.291.L008.srt.mdup', 
-            'NW150212-III.33.L001.srt.mdup',
-            'NW150212-III.35.L001.srt.mdup',
-            'NW150212-III.36.L001.srt.mdup',
-            'NW150212-III.39.L001.srt.mdup',
+SSEQ_CELL = [
             'NW150212-III.42.L001.srt.mdup',
             'NW150212-III.45.L001.srt.mdup',
-            'NW150212-III.48.L001.srt.mdup',
-            'NW150212-III.51.L001.srt.mdup',
-            'NW150212-III.52.L001.srt.mdup']
+            'NW150212-III.48.L001.srt.mdup'
+]
 SAMPLE = 'NA12878'
 
 
