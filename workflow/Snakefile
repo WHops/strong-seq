@@ -123,7 +123,6 @@ rule split_sseq_hx_plus_minus:
         """
 
 
-
 rule split_longreads_h1_h2:
     input:
         lr_bam = 'res/{sample}/ont_bams/{chr}/ont_split.bam', 
@@ -145,6 +144,7 @@ rule split_longreads_h1_h2:
                        {input.lr_bam} \
                        --ignore-read-groups \
                        --skip-missing-contigs \
+                       --tag-supplementary \
                        --output-haplotag-list {output.haplotag_list}
 
         {whatshap_bin} split \
@@ -178,7 +178,7 @@ rule make_eight_plusify_minusify:
 
 
 
-rule flip_a_plusify:
+rule flip_one_plusify_or_minusify_bam:
     input: 
         '{foo}/lr_sseq_eightfiles/lr_h{hap}_{direction}_{operation}.bam'
     output:
@@ -202,40 +202,6 @@ rule merge_eight_into_one:
         {samtools_bin} merge {output} {input}
         """
 
-
-
-# General rules that should be fine
-
-rule index_bam:
-    input: 
-        '{foo}.bam'
-    output:
-        '{foo}.bam.bai'
-    shell:
-        """
-        {samtools_bin} index {input}
-        """
-
-rule compress_vcf:
-    input:
-        '{foo}.vcf'
-    output:
-        vcf_gz = '{foo}.vcf.gz',
-    shell:
-        """
-        {bgzip_bin} -c {input} > {output.vcf_gz}
-        """
-   
-rule index_vcf:
-    input:
-        '{foo}.vcf.gz'
-    output:
-        index = '{foo}.vcf.gz.tbi'
-    shell:
-        """
-        {tabix_bin} -p vcf {input}
-        """
-
 rule haplotag_final_bam:
     input:
         reads_bam = 'res/{sample}/{sseq_cell}/{chr}/strong_res/strong_reads.bam',
@@ -254,4 +220,39 @@ rule haplotag_final_bam:
                        {input.reads_bam} \
                        --ignore-read-groups \
                        --skip-missing-contigs \
+                       --tag-supplementary
+        """
+
+
+
+# General rules that should be fine regardless of context
+
+rule index_bam:
+    input: 
+        '{foo}.bam'
+    output:
+        '{foo}.bam.bai'
+    shell:
+        """
+        {samtools_bin} index {input}
+        """
+
+rule compress_vcf:
+    input:
+        '{foo}.vcf'
+    output:
+        '{foo}.vcf.gz',
+    shell:
+        """
+        {bgzip_bin} -c {input} > {output}
+        """
+   
+rule index_vcf:
+    input:
+        '{foo}.vcf.gz'
+    output:
+        '{foo}.vcf.gz.tbi'
+    shell:
+        """
+        {tabix_bin} -p vcf {input}
         """
