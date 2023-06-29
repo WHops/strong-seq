@@ -39,7 +39,7 @@ rule merge_bams:
     input:
         expand('res/{{sample}}/{{sseq_cell}}/{chr}/strong_res/strong_reads_haplotagged.bam', chr = CHROMS)
     output:
-        'res/{sample}/strong-all/{sseq_cell}_strong.bam
+        'res/{sample}/strong-all/{sseq_cell}_strong.bam'
     shell:
         """
         {samtools_bin} merge {output} {input}
