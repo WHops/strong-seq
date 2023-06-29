@@ -34,9 +34,22 @@ SAMPLE = 'NA12878'
 
 rule all: 
     input:
-        expand('res/{sample}/{sseq_cell}/{chr}/strong_res/strong_reads_haplotagged.bam', sample=SAMPLE, sseq_cell = SSEQ_CELL, chr = CHROMS),
-        expand('res/{sample}/{sseq_cell}/{chr}/strong_res/strong_reads_haplotagged.bam.bai', sample=SAMPLE, sseq_cell = SSEQ_CELL, chr = CHROMS)
+        #expand('res/{sample}/{sseq_cell}/{chr}/strong_res/strong_reads_haplotagged.bam', sample=SAMPLE, sseq_cell = SSEQ_CELL, chr = CHROMS),
+        #expand('res/{sample}/{sseq_cell}/{chr}/strong_res/strong_reads_haplotagged.bam.bai', sample=SAMPLE, sseq_cell = SSEQ_CELL, chr = CHROMS),
+        expand('res/{sample}/strong-all/{sseq_cell}_strong.bam', sample=SAMPLE, sseq_cell=SSEQ_CELL),
+        expand('res/{sample}/strong-all/{sseq_cell}_strong.bam.bai', sample=SAMPLE, sseq_cell=SSEQ_CELL)
 
+
+rule merge_bams:
+    input:
+        expand('res/{{sample}}/{{sseq_cell}}/{chr}/strong_res/strong_reads_haplotagged.bam', chr = CHROMS)
+    output:
+        'res/{sample}/strong-all/{sseq_cell}_strong.bam
+    shell:
+        """
+        {samtools_bin} merge {output} {input}
+        {samtools_bin} index {output}
+        """
 
 rule turn_seqq_bam_into_one_chr:
     input:
