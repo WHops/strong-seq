@@ -88,8 +88,7 @@ rule obtain_het_snp_vcf:
         ExcHet_th = '0.1'
     shell:
         """
-        {bcftools_bin} view -s {wildcards.sample} -i 'INFO/ExcHet > {params.ExcHet_th}' {params.snp_file_dir}/1kGP_high_coverage_Illumina.{wildcards.chr}.filtered.SNV_INDEL_SV_phased_panel.vcf.gz |  grep -e "^#" -e "GT\t0|1" -e "GT\t1|0" | {bgzip_bin} > {output} 
-
+        {bcftools_bin} view -s {wildcards.sample} -i 'INFO/ExcHet > {params.ExcHet_th}' --exclude-types indels {params.snp_file_dir}/1kGP_high_coverage_Illumina.{wildcards.chr}.filtered.SNV_INDEL_SV_phased_panel.vcf.gz | grep -e "^#" -e "GT\t0|1" -e "GT\t1|0" | {bgzip_bin} > {output} 
         """
 
 rule split_sseq_h1_h2:
