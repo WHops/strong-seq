@@ -5,25 +5,33 @@
 
 configfile: "Snake.config.yaml"
 
-samtools_bin = "/g/korbel/hoeps/anaconda_2022/miniconda3/envs/ashleys/bin/samtools"
+samtools_bin = "/g/korbel/hoeps/anaconda_2022/miniconda3/envs/whatshap-env/bin/samtools"
 whatshap_bin = "/g/korbel/hoeps/anaconda_2022/miniconda3/envs/whatshap-env/bin/whatshap"
 bcftools_bin = "/g/korbel/hoeps/anaconda_2022/miniconda3/envs/ashleys/bin/bcftools"
 bgzip_bin = '/g/korbel/hoeps/anaconda_2022/miniconda3/envs/whatshap-env/bin/bgzip'
 tabix_bin = '/g/korbel/hoeps/anaconda_2022/miniconda3/envs/whatshap-env/bin/tabix'
 bedtools_bin = '/g/korbel/hoeps/anaconda_2022/miniconda3/envs/whatshap-env/bin/bedtools'
-sseq_dir = '/g/korbel/hoeps/projects/strong-seq/data/strandseq'
-ont_dir = '/g/korbel/hoeps/projects/strong-seq/data/ont_data'
+
+
+sseq_dir = config['path_to_sseq_bamdir']
+ont_dir = config['path_to_longread_bamdir']
 
 # Input: 
 # Sseq Cell(s)
 # List of chromosomes
 
 CHROMS = ['chr' + str(i) for i in range(1, 23)]
-SSEQ_CELL = [
+#CHROMS = ['chr' + str(i) for i in range(20,22)]
+SSEQ_CELL = ['NW130711.291.L008.srt.mdup', 
+            'NW150212-III.33.L001.srt.mdup',
+            'NW150212-III.35.L001.srt.mdup',
+            'NW150212-III.36.L001.srt.mdup',
+            'NW150212-III.39.L001.srt.mdup',
             'NW150212-III.42.L001.srt.mdup',
             'NW150212-III.45.L001.srt.mdup',
-            'NW150212-III.48.L001.srt.mdup'
-]
+            'NW150212-III.48.L001.srt.mdup',
+            'NW150212-III.51.L001.srt.mdup',
+            'NW150212-III.52.L001.srt.mdup']
 SAMPLE = 'NA12878'
 
 
@@ -31,8 +39,46 @@ rule all:
     input:
         #expand('res/{sample}/{sseq_cell}/{chr}/strong_res/strong_reads_haplotagged.bam', sample=SAMPLE, sseq_cell = SSEQ_CELL, chr = CHROMS),
         #expand('res/{sample}/{sseq_cell}/{chr}/strong_res/strong_reads_haplotagged.bam.bai', sample=SAMPLE, sseq_cell = SSEQ_CELL, chr = CHROMS),
-        expand('res/{sample}/strong-all/{sseq_cell}_strong.bam', sample=SAMPLE, sseq_cell=SSEQ_CELL),
-        expand('res/{sample}/strong-all/{sseq_cell}_strong.bam.bai', sample=SAMPLE, sseq_cell=SSEQ_CELL)
+        #expand('res/{sample}/strong-all/{sseq_cell}_strong.bam', sample=SAMPLE, sseq_cell=SSEQ_CELL),
+        #expand('res/{sample}/strong-all/{sseq_cell}_strong.bam.bai', sample=SAMPLE, sseq_cell=SSEQ_CELL),
+        expand('res/{sample}/strong-mini/{sseq_cell}_strong_mini.bed', sample=SAMPLE, sseq_cell='NW150212-III.42.L001.srt.mdup')
+
+
+rule get_onehap_strong_mini_one_chr:
+    input:
+        sseq_onehap = 'res/{sample}/{sseq_cell}/{chr}/sseq_split/sseq_h{haplotype}.bam',
+        strong_all = 'res/{sample}/strong-all/{sseq_cell}_strong.bam'
+    output:
+        'res/{sample}/{sseq_cell}/{chr}/strong-mini-h{haplotype}/{sseq_cell}_strong_mini.bed'
+    shell:
+        """
+        bash scripts/find_longest_ont_per_sseq.sh {input.sseq_onehap} {input.strong_all} {wildcards.chr} {wildcards.haplotype} {output} {samtools_bin} {bedtools_bin}
+        """
+
+
+rule combine_chr_strong_mini_into_one:
+    input:
+        expand('res/{{sample}}/{{sseq_cell}}/{chr}/strong-mini/{{sseq_cell}}_strong_mini.bed', chr=CHROMS),
+    output:
+        unsrt = 'res/{sample}/strong-mini/{sseq_cell}_strong_mini_unsrt.bed',
+        srt = 'res/{sample}/strong-mini/{sseq_cell}_strong_mini.bed'
+    shell:
+        """
+        cat {input} > {output.unsrt}
+        {bedtools_bin} sort -i {output.unsrt} > {output.srt}
+        """
+
+rule one_bed_mini_combine:
+    input:
+        h1_strong_mini = 'res/{sample}/{sseq_cell}/{chr}/strong-mini-h1/{sseq_cell}_strong_mini.bed',
+        h2_strong_mini = 'res/{sample}/{sseq_cell}/{chr}/strong-mini-h2/{sseq_cell}_strong_mini.bed',
+        #hx_strong_mini = 'res/{sample}/{sseq_cell}/{chr}/strong-mini-hx/{sseq_cell}_strong_mini.bed'
+    output:
+        "res/{sample}/{sseq_cell}/{chr}/strong-mini/{sseq_cell}_strong_mini.bed"
+    shell:
+        """
+        cat {input.h1_strong_mini} {input.h2_strong_mini} > {output}
+        """
 
 
 rule merge_bams:
