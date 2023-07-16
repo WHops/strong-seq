@@ -1,1 +1,4 @@
+workflow/.snakemake
+trash
 ssv_data
+data
