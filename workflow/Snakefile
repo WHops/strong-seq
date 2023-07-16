@@ -5,14 +5,6 @@
 
 configfile: "Snake.config.yaml"
 
-samtools_bin = "/g/korbel/hoeps/anaconda_2022/miniconda3/envs/whatshap-env/bin/samtools"
-whatshap_bin = "/g/korbel/hoeps/anaconda_2022/miniconda3/envs/whatshap-env/bin/whatshap"
-bcftools_bin = "/g/korbel/hoeps/anaconda_2022/miniconda3/envs/ashleys/bin/bcftools"
-bgzip_bin = '/g/korbel/hoeps/anaconda_2022/miniconda3/envs/whatshap-env/bin/bgzip'
-tabix_bin = '/g/korbel/hoeps/anaconda_2022/miniconda3/envs/whatshap-env/bin/tabix'
-bedtools_bin = '/g/korbel/hoeps/anaconda_2022/miniconda3/envs/whatshap-env/bin/bedtools'
-
-
 sseq_dir = config['path_to_sseq_bamdir']
 ont_dir = config['path_to_longread_bamdir']
 
@@ -72,7 +64,6 @@ rule one_bed_mini_combine:
     input:
         h1_strong_mini = 'res/{sample}/{sseq_cell}/{chr}/strong-mini-h1/{sseq_cell}_strong_mini.bed',
         h2_strong_mini = 'res/{sample}/{sseq_cell}/{chr}/strong-mini-h2/{sseq_cell}_strong_mini.bed',
-        #hx_strong_mini = 'res/{sample}/{sseq_cell}/{chr}/strong-mini-hx/{sseq_cell}_strong_mini.bed'
     output:
         "res/{sample}/{sseq_cell}/{chr}/strong-mini/{sseq_cell}_strong_mini.bed"
     shell:
@@ -106,7 +97,7 @@ rule turn_seqq_bam_into_one_chr:
         # -F 4: filters out reads that are not mapped
         # -F 8: filters out reads where the mate is not mapped
         # -F 256: filters out secondary alignments (keeps only the primary alignments)
-        {samtools_bin} view -b -q {params.mapq_th} -f 2 -F 4 -F 8 -F 256 {input.bam} {wildcards.chr} > {output.bam_onechr}
+        samtools view -b -q {params.mapq_th} -f 2 -F 4 -F 8 -F 256 {input.bam} {wildcards.chr} > {output.bam_onechr}
         """
 
 rule turn_ont_bam_into_one_chr:
@@ -118,7 +109,7 @@ rule turn_ont_bam_into_one_chr:
         mapq_th = '60'
     shell:
         """
-        {samtools_bin} view -b -q {params.mapq_th} -F 4 {input.bam} {wildcards.chr} > {output.bam_onechr}
+        samtools view -b -q {params.mapq_th} -F 4 {input.bam} {wildcards.chr} > {output.bam_onechr}
         """
 
 rule obtain_het_snp_vcf:
@@ -129,7 +120,7 @@ rule obtain_het_snp_vcf:
         ExcHet_th = '0.1'
     shell:
         """
-        {bcftools_bin} view -s {wildcards.sample} -i 'INFO/ExcHet > {params.ExcHet_th}' --exclude-types indels {params.snp_file_dir}/1kGP_high_coverage_Illumina.{wildcards.chr}.filtered.SNV_INDEL_SV_phased_panel.vcf.gz | grep -e "^#" -e "GT\t0|1" -e "GT\t1|0" | {bgzip_bin} > {output} 
+        bcftools view -s {wildcards.sample} -i 'INFO/ExcHet > {params.ExcHet_th}' --exclude-types indels {params.snp_file_dir}/1kGP_high_coverage_Illumina.{wildcards.chr}.filtered.SNV_INDEL_SV_phased_panel.vcf.gz | grep -e "^#" -e "GT\t0|1" -e "GT\t1|0" | bgzip > {output} 
         """
 
 rule split_sseq_h1_h2:
@@ -146,7 +137,7 @@ rule split_sseq_h1_h2:
         ref_fa = config['ref_fa'] 
     shell:
         """
-        {whatshap_bin} haplotag \
+        whatshap haplotag \
                         -o res/{wildcards.sample}/{wildcards.sseq_cell}/{wildcards.chr}/tmp.bam \
                        --reference {params.ref_fa} \
                        {input.snp_file} \
@@ -155,7 +146,7 @@ rule split_sseq_h1_h2:
                        --skip-missing-contigs \
                        --output-haplotag-list {output.haplotag_list}
 
-        {whatshap_bin} split \
+        whatshap split \
                         --output-h1 {output.sseq_h1} \
                         --output-h2 {output.sseq_h2} \
                         {input.sseq_cell} \
@@ -172,7 +163,7 @@ rule split_sseq_hx_plus_minus:
         out_bam = "res/{sample}/{sseq_cell}/{chr}/sseq_split/sseq_{hap}_{direction}.bam"
     shell:
         """
-        bash scripts/split_bam_by_direction_of_first_read.sh {input.in_bam} {output.out_bam} {wildcards.direction} {samtools_bin}
+        bash scripts/split_bam_by_direction_of_first_read.sh {input.in_bam} {output.out_bam} {wildcards.direction} samtools
         """
 
 
@@ -190,7 +181,7 @@ rule split_longreads_h1_h2:
         ref_fa = config['ref_fa'] 
     shell: 
         """
-        {whatshap_bin} haplotag \
+        whatshap haplotag \
                         -o res/{wildcards.sample}/{wildcards.sseq_cell}/{wildcards.chr}/tmp2.bam \
                        --reference {params.ref_fa} \
                        {input.snp_file} \
@@ -200,7 +191,7 @@ rule split_longreads_h1_h2:
                        --tag-supplementary \
                        --output-haplotag-list {output.haplotag_list}
 
-        {whatshap_bin} split \
+        whatshap split \
                         --output-h1 {output.lr_h1} \
                         --output-h2 {output.lr_h2} \
                         {input.lr_bam} \
@@ -223,10 +214,10 @@ rule make_eight_plusify_minusify:
         minusify_truth_value = lambda wildcards: 'false' if wildcards.direction == 'plus' else 'true'
     shell:
         """
-        bash scripts/overlap_ont_sseq.sh {input.lr_bam} {input.sseq_bam} {output.tmp_file} {bedtools_bin}
+        bash scripts/overlap_ont_sseq.sh {input.lr_bam} {input.sseq_bam} {output.tmp_file} bedtools
 
-        bash scripts/filter_bam_with_list_directionspecific.sh {input.lr_bam} {output.plusify} {output.tmp_file} {params.plusify_truth_value} {samtools_bin}
-        bash scripts/filter_bam_with_list_directionspecific.sh {input.lr_bam} {output.minusify} {output.tmp_file} {params.minusify_truth_value} {samtools_bin}
+        bash scripts/filter_bam_with_list_directionspecific.sh {input.lr_bam} {output.plusify} {output.tmp_file} {params.plusify_truth_value} samtools
+        bash scripts/filter_bam_with_list_directionspecific.sh {input.lr_bam} {output.minusify} {output.tmp_file} {params.minusify_truth_value} samtools
         """ 
 
 
@@ -239,8 +230,8 @@ rule flip_one_plusify_or_minusify_bam:
         output =     '{foo}/lr_sseq_eightfiles_reorient/lr_h{hap}_{direction}_{operation}_executed_sort.bam'
     shell:
         """
-        bash scripts/modify_bam_orientation.sh {input} {output.output_tmp} {wildcards.operation} {samtools_bin}
-        {samtools_bin} sort -o {output.output} {output.output_tmp}
+        bash scripts/modify_bam_orientation.sh {input} {output.output_tmp} {wildcards.operation} samtools
+        samtools sort -o {output.output} {output.output_tmp}
 
         """
 
@@ -252,7 +243,7 @@ rule merge_eight_into_one:
         '{foo}/strong_res/strong_reads.bam'
     shell:
         """
-        {samtools_bin} merge {output} {input}
+        samtools merge {output} {input}
         """
 
 rule haplotag_final_bam:
@@ -266,7 +257,7 @@ rule haplotag_final_bam:
         ref_fa = config['ref_fa'] 
     shell: 
         """
-        {whatshap_bin} haplotag \
+        whatshap haplotag \
                         -o {output} \
                        --reference {params.ref_fa} \
                        {input.phased_snp_vcf} \
@@ -287,7 +278,7 @@ rule index_bam:
         '{foo}.bam.bai'
     shell:
         """
-        {samtools_bin} index {input}
+        samtools index {input}
         """
 
 rule compress_vcf:
@@ -297,7 +288,7 @@ rule compress_vcf:
         '{foo}.vcf.gz',
     shell:
         """
-        {bgzip_bin} -c {input} > {output}
+        bgzip -c {input} > {output}
         """
    
 rule index_vcf:
@@ -307,5 +298,5 @@ rule index_vcf:
         '{foo}.vcf.gz.tbi'
     shell:
         """
-        {tabix_bin} -p vcf {input}
+        tabix -p vcf {input}
         """

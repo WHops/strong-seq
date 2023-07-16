@@ -1,0 +1,12 @@
+name: strongseq-env
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python ==3.9
+  - samtools ==1.17
+  - whatshap ==1.7
+  - bcftools ==1.3.1
+  - py-bgzip ==0.4.0
+  - tabix ==1.11
+  - bedtools ==2.31.0
