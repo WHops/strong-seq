@@ -1,0 +1,43 @@
+snp_file_dir : '/scratch/hoeps/dltest'
+path_to_sseq_bamdir : '/g/korbel/hoeps/projects/strong-seq/trash/data/strandseq'
+path_to_longread_bamdir : '/g/korbel/hoeps/projects/strong-seq/trash/data/ont_data'
+ref_fa : '/g/korbel/hoeps/projects/huminvs/data/hg38/ref_chr_1_22XY.fa'
+
+sample: 'NA12878'
+
+sseq_cellnames:
+  - NW130711.291.L008.srt.mdup
+  #- NW150212-III.33.L001.srt.mdup
+  #- NW150212-III.35.L001.srt.mdup
+  #- NW150212-III.36.L001.srt.mdup
+  #- NW150212-III.39.L001.srt.mdup
+  #- NW150212-III.42.L001.srt.mdup
+  #- NW150212-III.45.L001.srt.mdup
+  #- NW150212-III.48.L001.srt.mdup
+  #- NW150212-III.51.L001.srt.mdup
+  #- NW150212-III.52.L001.srt.mdup
+
+chromosomes:
+  - chr1
+  - chr2
+  - chr3
+  - chr4
+  - chr5
+  - chr6
+  - chr7
+  - chr8
+  - chr9
+  - chr10
+  - chr11
+  - chr12
+  - chr13
+  - chr14
+  - chr15
+  - chr16
+  - chr17
+  - chr18
+  - chr19
+  - chr20
+  - chr21
+  - chr22
+  - chrX
