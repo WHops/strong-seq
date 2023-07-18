@@ -11,7 +11,7 @@ To install, you will need a working version of anaconda and ideally mamba (for s
 git clone https://github.com/WHops/strong-seq.git
 cd strong-seq
 
-mamba create -f conda_env.yml
+mamba create -f strongseq-env.yml
 conda activate strongseq-env
 ```
 
