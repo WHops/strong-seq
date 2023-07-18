@@ -41,6 +41,6 @@ The results will appear in the a new folder, /res.
 
 ## Runtime
 
-The approx. runtime for running one Strand-Seq cell is around 30 minutes on 10 cores. 
+The approx. runtime for fusing one Strand-Seq cell with a ca 15X-coverage ONT bam files is around 30 minutes on 10 cores. 
 
 
