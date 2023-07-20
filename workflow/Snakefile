@@ -1,12 +1,8 @@
-# ToDo: 
-# Start from NYGC vcfs
-# Option to specify chromsomes (process all separately)
-# A haplotag on the ONT reads would be great for visualization
 
 bold = "\033[1m"
 green = "\033[92m"
 end = "\033[0m"
-msg = f"""{green}{bold}Good luck with running Strong-Seq! We hope you enjoy the ride! \nIf you encounter problems please please file an issue on git so we can improve! Feedback needed! \n{end}{end}"""
+msg = f"""{green}{bold}Thanks for using Strong-Seq! We hope you enjoy the ride! \nIf you encounter problems please file an issue on git so we can improve (Feedback needed)! \n{end}{end}"""
 sys.stderr.write(msg)
 
 
@@ -36,7 +32,7 @@ rule get_onehap_strong_mini_one_chr:
         'res/{sample}/{sseq_cell}/{chr}/strong-mini-h{haplotype}/{sseq_cell}_strong_mini.bed'
     shell:
         """
-        bash scripts/find_longest_ont_per_sseq.sh {input.sseq_onehap} {input.strong_all} {wildcards.chr} {wildcards.haplotype} {output} samtools bedtools
+        bash workflow/scripts/find_longest_ont_per_sseq.sh {input.sseq_onehap} {input.strong_all} {wildcards.chr} {wildcards.haplotype} {output} samtools bedtools
         """
 
 
@@ -155,7 +151,7 @@ rule split_sseq_hx_plus_minus:
         out_bam = "res/{sample}/{sseq_cell}/{chr}/sseq_split/sseq_{hap}_{direction}.bam"
     shell:
         """
-        bash scripts/split_bam_by_direction_of_first_read.sh {input.in_bam} {output.out_bam} {wildcards.direction} samtools
+        bash workflow/scripts/split_bam_by_direction_of_first_read.sh {input.in_bam} {output.out_bam} {wildcards.direction} samtools
         """
 
 
@@ -206,10 +202,10 @@ rule make_eight_plusify_minusify:
         minusify_truth_value = lambda wildcards: 'false' if wildcards.direction == 'plus' else 'true'
     shell:
         """
-        bash scripts/overlap_ont_sseq.sh {input.lr_bam} {input.sseq_bam} {output.tmp_file} bedtools
+        bash workflow/scripts/overlap_ont_sseq.sh {input.lr_bam} {input.sseq_bam} {output.tmp_file} bedtools
 
-        bash scripts/filter_bam_with_list_directionspecific.sh {input.lr_bam} {output.plusify} {output.tmp_file} {params.plusify_truth_value} samtools
-        bash scripts/filter_bam_with_list_directionspecific.sh {input.lr_bam} {output.minusify} {output.tmp_file} {params.minusify_truth_value} samtools
+        bash workflow/scripts/filter_bam_with_list_directionspecific.sh {input.lr_bam} {output.plusify} {output.tmp_file} {params.plusify_truth_value} samtools
+        bash workflow/scripts/filter_bam_with_list_directionspecific.sh {input.lr_bam} {output.minusify} {output.tmp_file} {params.minusify_truth_value} samtools
         """ 
 
 
@@ -222,7 +218,7 @@ rule flip_one_plusify_or_minusify_bam:
         output =     '{foo}/lr_sseq_eightfiles_reorient/lr_h{hap}_{direction}_{operation}_executed_sort.bam'
     shell:
         """
-        bash scripts/modify_bam_orientation.sh {input} {output.output_tmp} {wildcards.operation} samtools
+        bash workflow/scripts/modify_bam_orientation.sh {input} {output.output_tmp} {wildcards.operation} samtools
         samtools sort -o {output.output} {output.output_tmp}
 
         """
